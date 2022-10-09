@@ -68,16 +68,7 @@ func (set *StatisticalSampleSet) Mean() float64 {
 }
 
 func (set *StatisticalSampleSet) Median() float64 {
-	midPoint := len(set.valuesSortedInAscendingOrder) / 2
-
-	if set.thereAreAnOddNumberOfSamples() {
-		return set.valuesSortedInAscendingOrder[midPoint]
-	}
-
-	leftMidpointValue := set.valuesSortedInAscendingOrder[midPoint-1]
-	rightMidpointValue := set.valuesSortedInAscendingOrder[midPoint]
-
-	return (rightMidpointValue + leftMidpointValue) / 2.0
+	return medianOfAFloatSet(set.valuesSortedInAscendingOrder).computedMedian
 }
 
 func (set *StatisticalSampleSet) Mode() (modeFrequencyCount uint, valuesSeenThatManyTimes []float64) {
@@ -88,10 +79,6 @@ func (set *StatisticalSampleSet) Range() float64 {
 	lastElementIndex := len(set.valuesSortedInAscendingOrder) - 1
 
 	return set.valuesSortedInAscendingOrder[lastElementIndex] - set.valuesSortedInAscendingOrder[0]
-}
-
-func (set *StatisticalSampleSet) thereAreAnOddNumberOfSamples() bool {
-	return len(set.valuesSortedInAscendingOrder)&1 != 0
 }
 
 func (set *StatisticalSampleSet) SampleVariance() float64 {
@@ -108,4 +95,64 @@ func (set *StatisticalSampleSet) SampleStdev() float64 {
 
 func (set *StatisticalSampleSet) PopulationStdev() float64 {
 	return math.Sqrt(set.PopulationVariance())
+}
+
+func (set *StatisticalSampleSet) InterQuartileRange() (q1 float64, q3 float64, iqr float64) {
+	switch len(set.valuesSortedInAscendingOrder) {
+	case 1:
+		return set.valuesSortedInAscendingOrder[0], set.valuesSortedInAscendingOrder[0], 0
+
+	case 2:
+		return set.valuesSortedInAscendingOrder[0], set.valuesSortedInAscendingOrder[1], set.valuesSortedInAscendingOrder[1] - set.valuesSortedInAscendingOrder[0]
+	}
+
+	q2MedianInfo := medianOfAFloatSet(set.valuesSortedInAscendingOrder)
+
+	var q1MedianInfo, q3MedianInfo *medianValueAndBracketInfo
+
+	if q2MedianInfo.medianIsBetweenTwoValues {
+		q1MedianInfo = medianOfAFloatSet(set.valuesSortedInAscendingOrder[0:q2MedianInfo.indexOfMedianRightBracketInSet])
+		q3MedianInfo = medianOfAFloatSet(set.valuesSortedInAscendingOrder[q2MedianInfo.indexOfMedianRightBracketInSet:])
+	} else {
+		q1MedianInfo = medianOfAFloatSet(set.valuesSortedInAscendingOrder[0:q2MedianInfo.indexOfMedianInSet])
+		q3MedianInfo = medianOfAFloatSet(set.valuesSortedInAscendingOrder[q2MedianInfo.indexOfMedianInSet+1:])
+	}
+
+	iqr = q3MedianInfo.computedMedian - q1MedianInfo.computedMedian
+
+	return q1MedianInfo.computedMedian, q3MedianInfo.computedMedian, iqr
+}
+
+func thereIsAnOddNumberOfSamplesInTheSet(set []float64) bool {
+	return len(set)&1 != 0
+}
+
+type medianValueAndBracketInfo struct {
+	computedMedian                 float64
+	medianIsBetweenTwoValues       bool
+	indexOfMedianInSet             int
+	indexOfMedianLeftBracketInSet  int
+	indexOfMedianRightBracketInSet int
+}
+
+func medianOfAFloatSet(set []float64) *medianValueAndBracketInfo {
+	midPoint := len(set) / 2
+
+	if thereIsAnOddNumberOfSamplesInTheSet(set) {
+		return &medianValueAndBracketInfo{
+			computedMedian:           set[midPoint],
+			medianIsBetweenTwoValues: false,
+			indexOfMedianInSet:       midPoint,
+		}
+	}
+
+	leftMidpointValue := set[midPoint-1]
+	rightMidpointValue := set[midPoint]
+
+	return &medianValueAndBracketInfo{
+		computedMedian:                 (rightMidpointValue + leftMidpointValue) / 2.0,
+		medianIsBetweenTwoValues:       true,
+		indexOfMedianLeftBracketInSet:  midPoint - 1,
+		indexOfMedianRightBracketInSet: midPoint,
+	}
 }
