@@ -12,6 +12,7 @@ type StatisticalSampleSet struct {
 	sumOfAllValuesInTheSet       float64
 	distributionTracker          *valueDistributionTracker
 	modeTracker                  *modalTracker
+	varianceTracker              *varianceTracker
 }
 
 var ErrorFloat64Overflow = errors.New("float64 overflow")
@@ -42,12 +43,24 @@ func MakeStatisticalSampleSetFrom(samples []float64) (*StatisticalSampleSet, err
 	distributionTracker := newValueDistributionTracker(copyOfSamples)
 	modeTracker := newModalTracker(distributionTracker)
 
-	return &StatisticalSampleSet{
+	set := &StatisticalSampleSet{
 		valuesSortedInAscendingOrder: copyOfSamples,
 		sumOfAllValuesInTheSet:       sum,
 		distributionTracker:          distributionTracker,
 		modeTracker:                  modeTracker,
-	}, nil
+	}
+
+	set.varianceTracker = NewVarianceTracker(copyOfSamples, set)
+
+	return set, nil
+}
+
+func (set *StatisticalSampleSet) Minimum() float64 {
+	return set.valuesSortedInAscendingOrder[0]
+}
+
+func (set *StatisticalSampleSet) Maximum() float64 {
+	return set.valuesSortedInAscendingOrder[len(set.valuesSortedInAscendingOrder)-1]
 }
 
 func (set *StatisticalSampleSet) Mean() float64 {
@@ -71,6 +84,28 @@ func (set *StatisticalSampleSet) Mode() (modeFrequencyCount uint, valuesSeenThat
 	return set.modeTracker.Modes()
 }
 
+func (set *StatisticalSampleSet) Range() float64 {
+	lastElementIndex := len(set.valuesSortedInAscendingOrder) - 1
+
+	return set.valuesSortedInAscendingOrder[lastElementIndex] - set.valuesSortedInAscendingOrder[0]
+}
+
 func (set *StatisticalSampleSet) thereAreAnOddNumberOfSamples() bool {
 	return len(set.valuesSortedInAscendingOrder)&1 != 0
+}
+
+func (set *StatisticalSampleSet) SampleVariance() float64 {
+	return set.varianceTracker.Variance() / (float64(len(set.valuesSortedInAscendingOrder)) - 1)
+}
+
+func (set *StatisticalSampleSet) PopulationVariance() float64 {
+	return set.varianceTracker.Variance() / float64(len(set.valuesSortedInAscendingOrder))
+}
+
+func (set *StatisticalSampleSet) SampleStdev() float64 {
+	return math.Sqrt(set.SampleVariance())
+}
+
+func (set *StatisticalSampleSet) PopulationStdev() float64 {
+	return math.Sqrt(set.PopulationVariance())
 }

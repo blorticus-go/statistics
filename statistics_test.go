@@ -222,3 +222,157 @@ func TestMakeStatisticalSampleSetFromErrors(t *testing.T) {
 	}
 
 }
+
+type rangeTestCase struct {
+	floatSet      []float64
+	expectedRange float64
+}
+
+func (testCase *rangeTestCase) RunTest() error {
+	s, err := stats.MakeStatisticalSampleSetFrom(testCase.floatSet)
+	if err != nil {
+		return fmt.Errorf("on MakeStatisticalSampleSetFrom, got error = (%s)", err.Error())
+	}
+
+	gotRange := s.Range()
+
+	if gotRange != testCase.expectedRange {
+		return fmt.Errorf("expected Range (%f), got (%f)", testCase.expectedRange, gotRange)
+	}
+
+	return nil
+}
+
+func TestRange(t *testing.T) {
+	for testIndex, testCase := range []*rangeTestCase{
+		{
+			floatSet:      []float64{0},
+			expectedRange: 0,
+		},
+		{
+			floatSet:      []float64{1},
+			expectedRange: 0,
+		},
+		{
+			floatSet:      []float64{-1},
+			expectedRange: 0,
+		},
+		{
+			floatSet:      []float64{0, 1, 2, 3},
+			expectedRange: 3,
+		},
+		{
+			floatSet:      []float64{2, 3, 1, 0},
+			expectedRange: 3,
+		},
+		{
+			floatSet:      []float64{-6, -6, 7, 0, -3, 10, -12},
+			expectedRange: 22,
+		},
+	} {
+		if err := testCase.RunTest(); err != nil {
+			t.Errorf("on test with index (%d): %s", testIndex, err.Error())
+		}
+	}
+}
+
+type varianceAndStdevTestCase struct {
+	floatSet                   []float64
+	expectedSampleVariance     float64
+	expectedPopulationVariance float64
+	expectedSampleStdev        float64
+	expectedPopulationStdev    float64
+}
+
+func (testCase *varianceAndStdevTestCase) RunTest() error {
+	s, err := stats.MakeStatisticalSampleSetFrom(testCase.floatSet)
+	if err != nil {
+		return fmt.Errorf("on MakeStatisticalSampleSetFrom, got error = (%s)", err.Error())
+	}
+
+	sampleVariance := s.SampleVariance()
+	sampleStdev := s.SampleStdev()
+	populationVariance := s.PopulationVariance()
+	populationStdev := s.PopulationStdev()
+
+	if math.IsNaN(testCase.expectedSampleVariance) {
+		if !math.IsNaN(sampleVariance) {
+			return fmt.Errorf("expected ample variance (NaN), got (%f)", sampleVariance)
+		}
+	} else {
+		if sampleVariance != testCase.expectedSampleVariance {
+			return fmt.Errorf("expected sample variance (%f), got (%f)", testCase.expectedSampleVariance, sampleVariance)
+		}
+	}
+
+	if math.IsNaN(testCase.expectedSampleStdev) {
+		if !math.IsNaN(sampleStdev) {
+			return fmt.Errorf("expected sample stdev (NaN), got (%f)", sampleStdev)
+		}
+	} else {
+		if sampleStdev != testCase.expectedSampleStdev {
+			return fmt.Errorf("expected sample stdev (%f), got (%f)", testCase.expectedSampleStdev, sampleStdev)
+		}
+	}
+
+	if populationVariance != testCase.expectedPopulationVariance {
+		return fmt.Errorf("expected population variance (%f), got (%f)", testCase.expectedPopulationVariance, populationVariance)
+	}
+
+	if populationStdev != testCase.expectedPopulationStdev {
+		return fmt.Errorf("expected population stdev (%f), got (%f)", testCase.expectedPopulationStdev, populationStdev)
+	}
+
+	return nil
+}
+
+func TestVarianceAndStdev(t *testing.T) {
+	for testIndex, testCase := range []*varianceAndStdevTestCase{
+		{
+			floatSet:                   []float64{0},
+			expectedSampleVariance:     math.NaN(),
+			expectedPopulationVariance: 0,
+			expectedSampleStdev:        math.NaN(),
+			expectedPopulationStdev:    0,
+		},
+		{
+			floatSet:                   []float64{10},
+			expectedSampleVariance:     math.NaN(),
+			expectedPopulationVariance: 0,
+			expectedSampleStdev:        math.NaN(),
+			expectedPopulationStdev:    0,
+		},
+		{
+			floatSet:                   []float64{-10},
+			expectedSampleVariance:     math.NaN(),
+			expectedPopulationVariance: 0,
+			expectedSampleStdev:        math.NaN(),
+			expectedPopulationStdev:    0,
+		},
+		{
+			floatSet:                   []float64{100, 100, 100, 100},
+			expectedSampleVariance:     0,
+			expectedPopulationVariance: 0,
+			expectedSampleStdev:        0,
+			expectedPopulationStdev:    0,
+		},
+		{
+			floatSet:                   []float64{46, 37, 40, 33, 42, 36, 40, 47, 34, 45},
+			expectedSampleVariance:     float64(224) / float64(9),
+			expectedPopulationVariance: 22.4,
+			expectedSampleStdev:        math.Sqrt(float64(224) / float64(9)),
+			expectedPopulationStdev:    math.Sqrt(22.4),
+		},
+		{
+			floatSet:                   []float64{1.90, 3.00, 2.53, 3.71, 2.12, 1.76, 2.71, 1.39, 4.00, 3.33},
+			expectedSampleVariance:     float64(6.77185) / float64(9),
+			expectedPopulationVariance: float64(6.77185) / float64(10),
+			expectedSampleStdev:        math.Sqrt(float64(6.77185) / float64(9)),
+			expectedPopulationStdev:    math.Sqrt(float64(6.77185) / float64(10)),
+		},
+	} {
+		if err := testCase.RunTest(); err != nil {
+			t.Errorf("on test with index (%d): %s", testIndex, err.Error())
+		}
+	}
+}

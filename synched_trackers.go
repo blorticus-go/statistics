@@ -74,13 +74,44 @@ func generateModalMapFromADistributionMap(distributionMap map[float64]uint) (mod
 	return modalMap, highestOccuranceCount
 }
 
-func (generator *modalTracker) Modes() (numberOfTimesValuesWereSeen uint, valuesSeenThatManyTime []float64) {
-	generator.mutex.Lock()
-	defer generator.mutex.Unlock()
+func (tracker *modalTracker) Modes() (numberOfTimesValuesWereSeen uint, valuesSeenThatManyTime []float64) {
+	tracker.mutex.Lock()
+	defer tracker.mutex.Unlock()
 
-	if !generator.mapHasBeenGenerated {
-		generator.conditionallyGeneratedMap, generator.highestFrequencyCount = generateModalMapFromADistributionMap(generator.valueDistributionTracker.Map())
+	if !tracker.mapHasBeenGenerated {
+		tracker.conditionallyGeneratedMap, tracker.highestFrequencyCount = generateModalMapFromADistributionMap(tracker.valueDistributionTracker.Map())
 	}
 
-	return generator.highestFrequencyCount, generator.conditionallyGeneratedMap[generator.highestFrequencyCount]
+	return tracker.highestFrequencyCount, tracker.conditionallyGeneratedMap[tracker.highestFrequencyCount]
+}
+
+type varianceTracker struct {
+	mutex                           sync.Mutex
+	haveSummedDataPointVariances    bool
+	setOfDataPoints                 []float64
+	sampleSetContainerForDataPoints *StatisticalSampleSet
+	summedDataPointVariances        float64
+}
+
+func NewVarianceTracker(forTheSetOfValues []float64, containedBy *StatisticalSampleSet) *varianceTracker {
+	return &varianceTracker{
+		setOfDataPoints:                 forTheSetOfValues,
+		sampleSetContainerForDataPoints: containedBy,
+	}
+}
+
+func (tracker *varianceTracker) Variance() float64 {
+	tracker.mutex.Lock()
+	defer tracker.mutex.Unlock()
+
+	if !tracker.haveSummedDataPointVariances {
+		sampleSetMean := tracker.sampleSetContainerForDataPoints.Mean()
+		for _, dataPoint := range tracker.setOfDataPoints {
+			diff := dataPoint - sampleSetMean
+			tracker.summedDataPointVariances += (diff * diff)
+		}
+		tracker.haveSummedDataPointVariances = true
+	}
+
+	return tracker.summedDataPointVariances
 }
