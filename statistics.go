@@ -100,7 +100,7 @@ func (set *StatisticalSampleSet) PopulationStdev() float64 {
 func (set *StatisticalSampleSet) InterQuartileRange() (q1 float64, q3 float64, iqr float64) {
 	switch len(set.valuesSortedInAscendingOrder) {
 	case 1:
-		return set.valuesSortedInAscendingOrder[0], set.valuesSortedInAscendingOrder[0], 0
+		return set.valuesSortedInAscendingOrder[0], set.valuesSortedInAscendingOrder[0], 0.0
 
 	case 2:
 		return set.valuesSortedInAscendingOrder[0], set.valuesSortedInAscendingOrder[1], set.valuesSortedInAscendingOrder[1] - set.valuesSortedInAscendingOrder[0]

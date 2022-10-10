@@ -12,6 +12,11 @@ import (
 
 type statisticalSampleSetTestCase struct {
 	floatSet                               []float64
+	expectedMinimum                        float64
+	expectedMaximum                        float64
+	expectedQuartile1                      float64
+	expectedQuartile3                      float64
+	expectedInterQuartileRange             float64
 	shouldTestMean                         bool
 	expectedMean                           float64
 	shouldTestMedian                       bool
@@ -33,6 +38,28 @@ func (testCase *statisticalSampleSetTestCase) RunTest() error {
 	s, err := stats.MakeStatisticalSampleSetFrom(testCase.floatSet)
 	if err != nil {
 		return fmt.Errorf("on MakeStatisticalSampleSetFrom() got error: %s", err.Error())
+	}
+
+	gotMinimum := s.Minimum()
+	if gotMinimum != testCase.expectedMinimum {
+		return fmt.Errorf("expected Minimum (%f), got (%f)", testCase.expectedMinimum, gotMinimum)
+	}
+
+	gotMaximum := s.Maximum()
+	if gotMaximum != testCase.expectedMaximum {
+		return fmt.Errorf("expected Maximum (%f), got (%f)", testCase.expectedMaximum, gotMaximum)
+	}
+
+	gotQ1, gotQ3, gotIQR := s.InterQuartileRange()
+
+	if gotQ1 != testCase.expectedQuartile1 {
+		return fmt.Errorf("expected Q1 (%f), got (%f)", testCase.expectedQuartile1, gotQ1)
+	}
+	if gotQ3 != testCase.expectedQuartile3 {
+		return fmt.Errorf("expected Q3 (%f), got (%f)", testCase.expectedQuartile3, gotQ3)
+	}
+	if gotIQR != testCase.expectedInterQuartileRange {
+		return fmt.Errorf("expected IQR (%f), got (%f)", testCase.expectedInterQuartileRange, gotIQR)
 	}
 
 	if testCase.shouldTestMean {
@@ -131,6 +158,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestRange:                        true,
 			shouldTestVariance:                     true,
 			shouldTestStdev:                        true,
+			expectedMinimum:                        1.0,
+			expectedMaximum:                        1.0,
+			expectedQuartile1:                      1.0,
+			expectedQuartile3:                      1.0,
+			expectedInterQuartileRange:             0.0,
 			expectedMean:                           1.0,
 			expectedMedian:                         1.0,
 			expectedModeLargestDistributionCount:   1,
@@ -149,6 +181,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestRange:                        true,
 			shouldTestVariance:                     true,
 			shouldTestStdev:                        true,
+			expectedQuartile1:                      -1.0,
+			expectedQuartile3:                      -1.0,
+			expectedInterQuartileRange:             0,
+			expectedMinimum:                        -1.0,
+			expectedMaximum:                        -1.0,
 			expectedMean:                           -1.0,
 			expectedMedian:                         -1.0,
 			expectedModeLargestDistributionCount:   1,
@@ -167,6 +204,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestRange:                        true,
 			shouldTestVariance:                     true,
 			shouldTestStdev:                        true,
+			expectedMinimum:                        0.0,
+			expectedMaximum:                        0.0,
+			expectedQuartile1:                      0,
+			expectedQuartile3:                      0,
+			expectedInterQuartileRange:             0,
 			expectedMean:                           0.0,
 			expectedMedian:                         0.0,
 			expectedModeLargestDistributionCount:   1,
@@ -183,6 +225,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        1.0,
+			expectedMaximum:                        7.0,
+			expectedQuartile1:                      2.0,
+			expectedQuartile3:                      6.0,
+			expectedInterQuartileRange:             4.0,
 			expectedMean:                           4.0,
 			expectedMedian:                         4.0,
 			expectedModeLargestDistributionCount:   1,
@@ -195,6 +242,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        -7.0,
+			expectedMaximum:                        -1.0,
+			expectedQuartile1:                      -6.0,
+			expectedQuartile3:                      -2.0,
+			expectedInterQuartileRange:             4.0,
 			expectedMean:                           -4.0,
 			expectedMedian:                         -4.0,
 			expectedModeLargestDistributionCount:   1,
@@ -207,7 +259,12 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        -4.0,
+			expectedMaximum:                        4.0,
 			expectedMean:                           0.0,
+			expectedQuartile1:                      -2.5,
+			expectedQuartile3:                      2.5,
+			expectedInterQuartileRange:             5.0,
 			expectedMedian:                         0.0,
 			expectedModeLargestDistributionCount:   1,
 			expectedModeValuesWithThatDistribution: []float64{-4.0, -3.0, -2.0, -1.0, 1.0, 2.0, 3.0, 4.0},
@@ -219,6 +276,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        -3.0,
+			expectedMaximum:                        4.0,
+			expectedQuartile1:                      -2.0,
+			expectedQuartile3:                      3.0,
+			expectedInterQuartileRange:             5.0,
 			expectedMean:                           0.5714285714285714,
 			expectedMedian:                         1.0,
 			expectedModeLargestDistributionCount:   1,
@@ -231,6 +293,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        1.0,
+			expectedMaximum:                        3.0,
+			expectedQuartile1:                      1.0,
+			expectedQuartile3:                      3.0,
+			expectedInterQuartileRange:             2.0,
 			expectedMean:                           2.0,
 			expectedMedian:                         2.0,
 			expectedModeLargestDistributionCount:   1,
@@ -243,6 +310,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        1.0,
+			expectedMaximum:                        5.0,
+			expectedQuartile1:                      1.0,
+			expectedQuartile3:                      5.0,
+			expectedInterQuartileRange:             4.0,
 			expectedMean:                           3.0,
 			expectedMedian:                         3.0,
 			expectedModeLargestDistributionCount:   1,
@@ -255,6 +327,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        -30.9875646,
+			expectedMaximum:                        1000.5,
+			expectedQuartile1:                      -0.22,
+			expectedQuartile3:                      3.45,
+			expectedInterQuartileRange:             3.6700000000000004,
 			expectedMean:                           162.5404059,
 			expectedMedian:                         1.25,
 			expectedModeLargestDistributionCount:   1,
@@ -267,6 +344,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        -1.0,
+			expectedMaximum:                        15.0,
+			expectedQuartile1:                      1.0,
+			expectedQuartile3:                      5.0,
+			expectedInterQuartileRange:             4.0,
 			expectedMean:                           3.3,
 			expectedMedian:                         2.0,
 			expectedModeLargestDistributionCount:   3,
@@ -279,6 +361,11 @@ func TestStatisticalSets(t *testing.T) {
 			shouldTestMedian:                       true,
 			shouldTestMode:                         true,
 			shouldTestRange:                        true,
+			expectedMinimum:                        0,
+			expectedMaximum:                        6,
+			expectedQuartile1:                      2.0,
+			expectedQuartile3:                      5.5,
+			expectedInterQuartileRange:             3.5,
 			expectedMean:                           3.4166666666666665,
 			expectedMedian:                         3.5,
 			expectedModeLargestDistributionCount:   3,
@@ -289,6 +376,11 @@ func TestStatisticalSets(t *testing.T) {
 			floatSet:                   []float64{100, 100, 100, 100},
 			shouldTestVariance:         true,
 			shouldTestStdev:            true,
+			expectedMinimum:            100.0,
+			expectedMaximum:            100.0,
+			expectedQuartile1:          100,
+			expectedQuartile3:          100,
+			expectedInterQuartileRange: 0,
 			expectedSampleVariance:     0,
 			expectedPopulationVariance: 0,
 			expectedSampleStdev:        0,
@@ -298,6 +390,11 @@ func TestStatisticalSets(t *testing.T) {
 			floatSet:                   []float64{46, 37, 40, 33, 42, 36, 40, 47, 34, 45},
 			shouldTestVariance:         true,
 			shouldTestStdev:            true,
+			expectedMinimum:            33,
+			expectedMaximum:            47,
+			expectedQuartile1:          36,
+			expectedQuartile3:          45,
+			expectedInterQuartileRange: 9,
 			expectedSampleVariance:     float64(224) / float64(9),
 			expectedPopulationVariance: 22.4,
 			expectedSampleStdev:        math.Sqrt(float64(224) / float64(9)),
@@ -307,6 +404,11 @@ func TestStatisticalSets(t *testing.T) {
 			floatSet:                   []float64{1.90, 3.00, 2.53, 3.71, 2.12, 1.76, 2.71, 1.39, 4.00, 3.33},
 			shouldTestVariance:         true,
 			shouldTestStdev:            true,
+			expectedMinimum:            1.39,
+			expectedMaximum:            4.00,
+			expectedQuartile1:          1.9,
+			expectedQuartile3:          3.33,
+			expectedInterQuartileRange: 1.4300000000000002,
 			expectedSampleVariance:     float64(6.77185) / float64(9),
 			expectedPopulationVariance: float64(6.77185) / float64(10),
 			expectedSampleStdev:        math.Sqrt(float64(6.77185) / float64(9)),
