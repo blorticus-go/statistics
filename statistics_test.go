@@ -466,3 +466,59 @@ func TestMakeStatisticalSampleSetFromErrors(t *testing.T) {
 	}
 
 }
+
+type PercentileTestCase struct {
+	floatSet                      []float64
+	percentiles                   []int
+	expectedValueAtEachPercentile []float64
+}
+
+func (testCase *PercentileTestCase) RunTest() error {
+	s, err := stats.MakeStatisticalSampleSetFrom(testCase.floatSet)
+	if err != nil {
+		return fmt.Errorf("on MakeStatisticalSampleSetFrom() got error: %s", err.Error())
+	}
+
+	for i, percentile := range testCase.percentiles {
+		v := s.ValueNearestPercentile(percentile)
+		if v != testCase.expectedValueAtEachPercentile[i] {
+			return fmt.Errorf("for percentile (%d) expected (%f), got (%f)", percentile, testCase.expectedValueAtEachPercentile[i], v)
+		}
+	}
+
+	return nil
+}
+
+func TestPercentile(t *testing.T) {
+	for testIndex, testCase := range []*PercentileTestCase{
+		{
+			floatSet:                      []float64{0},
+			percentiles:                   []int{1, 5, 10, 50, 90, 95, 100},
+			expectedValueAtEachPercentile: []float64{0, 0, 0, 0, 0, 0, 0},
+		},
+		{
+			floatSet:                      []float64{10},
+			percentiles:                   []int{1, 5, 10, 50, 90, 95, 100},
+			expectedValueAtEachPercentile: []float64{10, 10, 10, 10, 10, 10, 10},
+		},
+		{
+			floatSet:                      []float64{10, 8, 3, 2, 5, 7, 9, 1, 4, 6},
+			percentiles:                   []int{1, 5, 10, 50, 90, 95, 100},
+			expectedValueAtEachPercentile: []float64{1, 1, 1, 5, 9, 9, 10},
+		},
+		{
+			floatSet:                      []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+			percentiles:                   []int{1, 5, 10, 50, 90, 95, 100},
+			expectedValueAtEachPercentile: []float64{1, 1, 2, 10, 18, 19, 20},
+		},
+		{
+			floatSet:                      []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22},
+			percentiles:                   []int{1, 5, 10, 50, 90, 95, 100},
+			expectedValueAtEachPercentile: []float64{1, 2, 3, 11, 19, 20, 22},
+		},
+	} {
+		if err := testCase.RunTest(); err != nil {
+			t.Errorf("on test with index (%d): %s", testIndex, err.Error())
+		}
+	}
+}

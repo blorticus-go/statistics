@@ -123,6 +123,25 @@ func (set *StatisticalSampleSet) InterQuartileRange() (q1 float64, q3 float64, i
 	return q1MedianInfo.computedMedian, q3MedianInfo.computedMedian, iqr
 }
 
+func (set *StatisticalSampleSet) ValueNearestPercentileWithErrors(percentile int) (float64, error) {
+	if percentile < 0 || percentile > 100 {
+		return 0, fmt.Errorf("percentile must be in the range 0..100")
+	}
+
+	floorIndexNearestPercentile := (len(set.valuesSortedInAscendingOrder) - 1) * percentile / 100
+
+	return set.valuesSortedInAscendingOrder[floorIndexNearestPercentile], nil
+}
+
+func (set *StatisticalSampleSet) ValueNearestPercentile(percentile int) float64 {
+	f, err := set.ValueNearestPercentileWithErrors(percentile)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return f
+}
+
 func thereIsAnOddNumberOfSamplesInTheSet(set []float64) bool {
 	return len(set)&1 != 0
 }
